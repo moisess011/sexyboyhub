@@ -44,7 +44,7 @@ local Config = {
 
     -- [7] Hub Information & UI Text
     HubName         = "SexyBoy HUB", -- The main title shown at the top of the GUI
-    HubDescription  = "Q ondax!" -- The text shown below the title
+    HubDescription  = "Ingresa la key para tener diversion :)" -- The text shown below the title
 }
 
 -------------------------------------------------------------------------------
