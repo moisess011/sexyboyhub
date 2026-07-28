@@ -1,5 +1,5 @@
--- // SexyBoy Hub v5.1 - Universal Cross-Platform Edition
--- // Interfaz Rediseñada & Sistema UI Avanzado + Vuelo para Móvil
+-- // SexyBoy Hub v5.2 - Custom Speed & Fixed Mobile Fly
+-- // Interfaz Rediseñada & Controles Interactivos
 
 local player = game.Players.LocalPlayer
 local Event = game:GetService("ReplicatedStorage"):WaitForChild("Event")
@@ -23,7 +23,7 @@ local lang = "ES"
 local T = {
     ES = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.1",
+        subtitle = "HUB VIP v5.2",
         combat = "Combate",
         movement = "Movimiento",
         teleports = "Teleports",
@@ -38,12 +38,14 @@ local T = {
         refreshDesc = "Recarga ForceField moviéndote al Harbour",
         refreshCS = "Refresh Client",
         refreshCSDesc = "Obtén ForceField estático de cliente",
-        speed = "Velocidad x3",
-        speedDesc = "Multiplica la velocidad de desplazamiento",
+        speed = "Velocidad Personalizada",
+        speedDesc = "Ajusta tu velocidad de caminata",
         jump = "Salto Infinito",
         jumpDesc = "Permite saltar de forma continua en el aire",
         fly = "Modo Vuelo (PC / Móvil)",
-        flyDesc = "Vuelo libre usando el joystick o teclado",
+        flyDesc = "Vuelo libre ajustado para cualquier dispositivo",
+        flySpeed = "Velocidad de Vuelo",
+        flySpeedDesc = "Ajusta la velocidad mientras estás volando",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -56,7 +58,7 @@ local T = {
     },
     EN = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.1",
+        subtitle = "HUB VIP v5.2",
         combat = "Combat",
         movement = "Movement",
         teleports = "Teleports",
@@ -71,12 +73,14 @@ local T = {
         refreshDesc = "Gives ForceField via Harbour TP",
         refreshCS = "Refresh Client",
         refreshCSDesc = "Static client-side ForceField",
-        speed = "Speed x3",
-        speedDesc = "Increases movement velocity",
+        speed = "Custom Speed",
+        speedDesc = "Adjust your walk speed",
         jump = "Infinite Jump",
         jumpDesc = "Allows continuous mid-air jumps",
         fly = "Fly Mode (PC / Mobile)",
-        flyDesc = "Free flight using joystick or keyboard",
+        flyDesc = "Free flight tuned for any device",
+        flySpeed = "Fly Speed",
+        flySpeedDesc = "Adjust speed while flying",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -342,6 +346,81 @@ local function createToggle(parent, name, desc, y, callback)
     return row
 end
 
+local function createSlider(parent, name, desc, y, minVal, maxVal, defaultVal, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -20, 0, 62)
+    row.Position = UDim2.new(0, 10, 0, y)
+    row.BackgroundColor3 = Color3.fromRGB(20, 23, 31)
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 0, 20)
+    label.Position = UDim2.new(0, 12, 0, 6)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(235, 240, 245)
+    label.TextSize = 13
+    label.Font = Enum.Font.GothamSemibold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0.3, 0, 0, 20)
+    valLbl.Position = UDim2.new(0.7, -12, 0, 6)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = tostring(defaultVal)
+    valLbl.TextColor3 = Color3.fromRGB(0, 230, 160)
+    valLbl.TextSize = 12
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.Parent = row
+
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Size = UDim2.new(1, -24, 0, 6)
+    sliderBg.Position = UDim2.new(0, 12, 0, 42)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 40, 52)
+    sliderBg.Parent = row
+    Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
+
+    local sliderFill = Instance.new("Frame")
+    local initRatio = (defaultVal - minVal) / (maxVal - minVal)
+    sliderFill.Size = UDim2.new(initRatio, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 230, 160)
+    sliderFill.Parent = sliderBg
+    Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        local currentVal = math.floor(minVal + (maxVal - minVal) * pos)
+        valLbl.Text = tostring(currentVal)
+        callback(currentVal)
+    end
+
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
+
+    return row
+end
+
 local function createButton(parent, name, desc, y, accentColor, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 50)
@@ -486,7 +565,7 @@ function createHub()
         page.BackgroundTransparency = 1
         page.ScrollBarThickness = 2
         page.ScrollBarImageColor3 = Color3.fromRGB(40, 45, 60)
-        page.CanvasSize = UDim2.new(0, 0, 0, 380)
+        page.CanvasSize = UDim2.new(0, 0, 0, 420)
         page.Visible = (i == 1)
         page.Parent = main
 
@@ -640,14 +719,26 @@ function createHub()
     end)
 
     -- ===== MOVEMENT =====
+    local speedOn = false
+    local walkSpeedVal = 48
+    local flySpeedVal = 80
+
     createToggle(pages["movement"], t("speed"), t("speedDesc"), 5, function(on)
+        speedOn = on
         if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.WalkSpeed = on and 48 or 16
+            player.Character.Humanoid.WalkSpeed = on and walkSpeedVal or 16
+        end
+    end)
+
+    createSlider(pages["movement"], "Speed Value", "Ajusta la velocidad de marcha", 65, 16, 250, 48, function(v)
+        walkSpeedVal = v
+        if speedOn and player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = v
         end
     end)
 
     local infJump = false
-    createToggle(pages["movement"], t("jump"), t("jumpDesc"), 65, function(on)
+    createToggle(pages["movement"], t("jump"), t("jumpDesc"), 133, function(on)
         infJump = on
     end)
     UserInputService.JumpRequest:Connect(function()
@@ -656,9 +747,9 @@ function createHub()
         end
     end)
 
-    -- // SISTEMA DE VUELO MÓVIL / PC UNIVERSAL //
+    -- // VUELO CORREGIDO & SLIDER SPEED //
     local flyOn, flyBV, flyGyro = false, nil, nil
-    createToggle(pages["movement"], t("fly"), t("flyDesc"), 125, function(on)
+    createToggle(pages["movement"], t("fly"), t("flyDesc"), 193, function(on)
         flyOn = on
         local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -681,13 +772,13 @@ function createHub()
             task.spawn(function()
                 while flyOn and flyBV and flyBV.Parent and hrp do
                     local cam = workspace.CurrentCamera
-                    local moveDir = hum.MoveDirection -- Detecta Joystick Táctil y W/A/S/D
+                    local moveDir = hum.MoveDirection
                     local targetVel = Vector3.zero
 
                     if moveDir.Magnitude > 0.1 then
-                        -- Convertir la dirección del joystick/teclado para seguir la perspectiva de la cámara en 3D
                         local lookCF = cam.CFrame
-                        targetVel = (lookCF.LookVector * -moveDir.Z + lookCF.RightVector * moveDir.X).Unit * 75
+                        -- CORRECCIÓN DEL VECTOR: Se invierten los valores Z para corregir dirección en móvil
+                        targetVel = (lookCF.LookVector * moveDir.Z + lookCF.RightVector * moveDir.X).Unit * flySpeedVal
                     end
 
                     flyBV.Velocity = targetVel
@@ -700,6 +791,10 @@ function createHub()
             if flyBV then flyBV:Destroy() flyBV = nil end
             if flyGyro then flyGyro:Destroy() flyGyro = nil end
         end
+    end)
+
+    createSlider(pages["movement"], t("flySpeed"), t("flySpeedDesc"), 253, 20, 250, 80, function(v)
+        flySpeedVal = v
     end)
 
     -- ===== TELEPORTS =====
@@ -735,4 +830,4 @@ function createHub()
     end)
 end
 
-print("SexyBoy Hub v5.1 activado con éxito.")
+print("SexyBoy Hub v5.2 activado con éxito.")
