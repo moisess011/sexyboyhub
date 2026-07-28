@@ -1,14 +1,16 @@
--- // SexyBoy Hub v4 - Cambios:
--- // HUB FLOTANTE
--- // IDIOMAS ESP/ENG
--- // Refresh Client Side
--- // Refresh Fe
+-- // SexyBoy Hub v5 - Modern UI Edition
+-- // Interfaz Rediseñada & Sistema UI Avanzado
 
 local player = game.Players.LocalPlayer
 local Event = game:GetService("ReplicatedStorage"):WaitForChild("Event")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
+
+-- Destruir interfaz previa si existe
+local oldGui = player:WaitForChild("PlayerGui"):FindFirstChild("SexyBoyHub")
+if oldGui then oldGui:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SexyBoyHub"
@@ -16,72 +18,74 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local lang = "ES" -- ES o EN
+local lang = "ES"
 
 local T = {
     ES = {
-        title = "SexyBoy Hub",
+        title = "SEXYBOY",
+        subtitle = "HUB VIP v5.0",
         combat = "Combate",
         movement = "Movimiento",
         teleports = "Teleports",
         settings = "Ajustes",
         killAura = "KillAura Rifle",
-        killAuraDesc = "Dispara solo a enemigos cercanos",
+        killAuraDesc = "Elimina automáticamente a enemigos cercanos",
         rpg = "Auto RPG",
-        rpgDesc = "Lanza RPG a enemigos automáticamente",
+        rpgDesc = "Dispara RPG predictivo a objetivos",
         turret = "Torreta Predictiva",
-        turretDesc = "Apunta y dispara a aviones",
-        refresh = "Refresh",
-        refreshDesc = "Va al Harbour y vuelve (ForceField)",
+        turretDesc = "Apunta y derriba vehículos aéreos",
+        refresh = "Refresh Server",
+        refreshDesc = "Recarga ForceField moviéndote al Harbour",
         refreshCS = "Refresh Client",
-        refreshCSDesc = "ForceField sin moverte de lugar",
-        speed = "Speed x3",
-        speedDesc = "Aumenta tu velocidad de carrera",
+        refreshCSDesc = "Obtén ForceField estático de cliente",
+        speed = "Velocidad x3",
+        speedDesc = "Multiplica la velocidad de desplazamiento",
         jump = "Salto Infinito",
-        jumpDesc = "Salta sin tocar el suelo",
-        fly = "Fly",
-        flyDesc = "Vuela libremente por el mapa",
-        harbour = "Harbour",
+        jumpDesc = "Permite saltar de forma continua en el aire",
+        fly = "Modo Vuelo",
+        flyDesc = "Desplazamiento libre tridimensional",
+        harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
         islandC = "Island C",
-        carrier = "Carrier",
+        carrier = "Carrier Ship",
         battleship = "Battleship",
-        tpDesc = "Teletransportarte a esta zona",
-        language = "Idioma",
-        langDesc = "Cambiar idioma del hub",
+        tpDesc = "Teletransporte instantáneo",
+        language = "Idioma / Language",
+        langDesc = "Selecciona la interfaz preferida",
     },
     EN = {
-        title = "SexyBoy Hub",
+        title = "SEXYBOY",
+        subtitle = "HUB VIP v5.0",
         combat = "Combat",
         movement = "Movement",
         teleports = "Teleports",
         settings = "Settings",
         killAura = "KillAura Rifle",
-        killAuraDesc = "Shoots nearby enemies only",
+        killAuraDesc = "Automatically targets nearby enemies",
         rpg = "Auto RPG",
-        rpgDesc = "Auto fires RPG at enemies",
+        rpgDesc = "Fires predictive RPG at targets",
         turret = "Predictive Turret",
-        turretDesc = "Aims and shoots at planes",
-        refresh = "Refresh",
-        refreshDesc = "Goes to Harbour and back (FF)",
+        turretDesc = "Locks and shoots down aircraft",
+        refresh = "Refresh Server",
+        refreshDesc = "Gives ForceField via Harbour TP",
         refreshCS = "Refresh Client",
-        refreshCSDesc = "ForceField without moving",
+        refreshCSDesc = "Static client-side ForceField",
         speed = "Speed x3",
-        speedDesc = "Increases your run speed",
+        speedDesc = "Increases movement velocity",
         jump = "Infinite Jump",
-        jumpDesc = "Jump without touching the ground",
-        fly = "Fly",
-        flyDesc = "Fly freely around the map",
-        harbour = "Harbour",
+        jumpDesc = "Allows continuous mid-air jumps",
+        fly = "Fly Mode",
+        flyDesc = "Free 3D camera flight",
+        harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
         islandC = "Island C",
-        carrier = "Carrier",
+        carrier = "Carrier Ship",
         battleship = "Battleship",
-        tpDesc = "Teleport to this location",
+        tpDesc = "Instant teleportation",
         language = "Language",
-        langDesc = "Change hub language",
+        langDesc = "Select preferred interface language",
     }
 }
 
@@ -89,222 +93,289 @@ local function t(key)
     return T[lang][key] or key
 end
 
-local function playSound(id, vol)
-    local s = Instance.new("Sound")
-    s.SoundId = "rbxassetid://" .. tostring(id)
-    s.Volume = vol or 0.35
-    s.Parent = SoundService
-    s:Play()
-    game:GetService("Debris"):AddItem(s, 2)
-end
+-- Blur Effect para la carga/login
+local blur = Instance.new("BlurEffect")
+blur.Size = 18
+blur.Parent = Lighting
 
--- Floating icon (para reabrir)
+-- Floating Reopen Button
 local floatBtn = Instance.new("TextButton")
-floatBtn.Size = UDim2.new(0, 55, 0, 55)
-floatBtn.Position = UDim2.new(1, -75, 0.5, -27)
-floatBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 130)
-floatBtn.Text = "SB"
-floatBtn.TextColor3 = Color3.new(1,1,1)
-floatBtn.TextSize = 18
-floatBtn.Font = Enum.Font.GothamBold
+floatBtn.Size = UDim2.new(0, 48, 0, 48)
+floatBtn.Position = UDim2.new(1, -65, 0.5, -24)
+floatBtn.BackgroundColor3 = Color3.fromRGB(15, 17, 23)
+floatBtn.Text = "⚡"
+floatBtn.TextColor3 = Color3.fromRGB(0, 230, 160)
+floatBtn.TextSize = 20
 floatBtn.Visible = false
 floatBtn.Parent = screenGui
-Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(1, 0)
+
+local floatCorner = Instance.new("UICorner", floatBtn)
+floatCorner.CornerRadius = UDim.new(0, 12)
+local floatStroke = Instance.new("UIStroke", floatBtn)
+floatStroke.Color = Color3.fromRGB(0, 230, 160)
+floatStroke.Thickness = 1.5
+floatStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
 floatBtn.Active = true
 floatBtn.Draggable = true
 
--- ==================== LOADING ====================
-local loading = Instance.new("Frame")
-loading.Size = UDim2.new(0, 320, 0, 180)
-loading.Position = UDim2.new(0.5, -160, 0.5, -90)
-loading.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
-loading.Parent = screenGui
-Instance.new("UICorner", loading).CornerRadius = UDim.new(0, 16)
+-- ==================== LOADING SCREEN ====================
+local loadingFrame = Instance.new("Frame")
+loadingFrame.Size = UDim2.new(0, 340, 0, 190)
+loadingFrame.Position = UDim2.new(0.5, -170, 0.5, -95)
+loadingFrame.BackgroundColor3 = Color3.fromRGB(13, 15, 20)
+loadingFrame.Parent = screenGui
+
+Instance.new("UICorner", loadingFrame).CornerRadius = UDim.new(0, 14)
+local loadStroke = Instance.new("UIStroke", loadingFrame)
+loadStroke.Color = Color3.fromRGB(30, 35, 48)
+loadStroke.Thickness = 1
 
 local loadTitle = Instance.new("TextLabel")
-loadTitle.Size = UDim2.new(1, 0, 0, 50)
+loadTitle.Size = UDim2.new(1, 0, 0, 40)
+loadTitle.Position = UDim2.new(0, 0, 0, 25)
 loadTitle.BackgroundTransparency = 1
-loadTitle.Text = "SexyBoy Hub"
-loadTitle.TextColor3 = Color3.fromRGB(0, 220, 160)
-loadTitle.TextSize = 26
+loadTitle.Text = "SEXYBOY HUB"
+loadTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadTitle.TextSize = 22
 loadTitle.Font = Enum.Font.GothamBold
-loadTitle.Parent = loading
+loadTitle.Parent = loadingFrame
 
-local loadBar = Instance.new("Frame")
-loadBar.Size = UDim2.new(0.8, 0, 0, 7)
-loadBar.Position = UDim2.new(0.1, 0, 0, 120)
-loadBar.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-loadBar.Parent = loading
-Instance.new("UICorner", loadBar).CornerRadius = UDim.new(1, 0)
+local loadSub = Instance.new("TextLabel")
+loadSub.Size = UDim2.new(1, 0, 0, 20)
+loadSub.Position = UDim2.new(0, 0, 0, 60)
+loadSub.BackgroundTransparency = 1
+loadSub.Text = "Iniciando sistema VIP..."
+loadSub.TextColor3 = Color3.fromRGB(0, 230, 160)
+loadSub.TextSize = 12
+loadSub.Font = Enum.Font.GothamMedium
+loadSub.Parent = loadingFrame
+
+local loadBarBg = Instance.new("Frame")
+loadBarBg.Size = UDim2.new(0.82, 0, 0, 6)
+loadBarBg.Position = UDim2.new(0.09, 0, 0, 115)
+loadBarBg.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
+loadBarBg.Parent = loadingFrame
+Instance.new("UICorner", loadBarBg).CornerRadius = UDim.new(1, 0)
 
 local loadFill = Instance.new("Frame")
 loadFill.Size = UDim2.new(0, 0, 1, 0)
-loadFill.BackgroundColor3 = Color3.fromRGB(0, 220, 160)
-loadFill.Parent = loadBar
+loadFill.BackgroundColor3 = Color3.fromRGB(0, 230, 160)
+loadFill.Parent = loadBarBg
 Instance.new("UICorner", loadFill).CornerRadius = UDim.new(1, 0)
 
+local percentLbl = Instance.new("TextLabel")
+percentLbl.Size = UDim2.new(1, 0, 0, 20)
+percentLbl.Position = UDim2.new(0, 0, 0, 135)
+percentLbl.BackgroundTransparency = 1
+percentLbl.Text = "0%"
+percentLbl.TextColor3 = Color3.fromRGB(120, 125, 140)
+percentLbl.TextSize = 11
+percentLbl.Font = Enum.Font.Gotham
+percentLbl.Parent = loadingFrame
+
 task.spawn(function()
+    local stages = {"Cargando dependencias...", "Verificando bypass...", "Conectando al servidor...", "Listo!"}
     for i = 1, 100 do
         loadFill.Size = UDim2.new(i/100, 0, 1, 0)
-        task.wait(0.012)
+        percentLbl.Text = tostring(i) .. "%"
+        if i == 25 then loadSub.Text = stages[1]
+        elseif i == 55 then loadSub.Text = stages[2]
+        elseif i == 85 then loadSub.Text = stages[3]
+        elseif i == 98 then loadSub.Text = stages[4] end
+        task.wait(0.015)
     end
-    task.wait(0.25)
-    loading:Destroy()
+    task.wait(0.2)
+    loadingFrame:Destroy()
     showLogin()
 end)
 
--- ==================== INICIAR SESION ====================
+-- ==================== LOGIN SCREEN ====================
 function showLogin()
-    local login = Instance.new("Frame")
-    login.Size = UDim2.new(0, 310, 0, 260)
-    login.Position = UDim2.new(0.5, -155, 0.5, -130)
-    login.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
-    login.Parent = screenGui
-    Instance.new("UICorner", login).CornerRadius = UDim.new(0, 16)
+    local loginFrame = Instance.new("Frame")
+    loginFrame.Size = UDim2.new(0, 320, 0, 280)
+    loginFrame.Position = UDim2.new(0.5, -160, 0.5, -140)
+    loginFrame.BackgroundColor3 = Color3.fromRGB(13, 15, 20)
+    loginFrame.Parent = screenGui
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 45)
-    title.BackgroundTransparency = 1
-    title.Text = "Iniciar Sesión"
-    title.TextColor3 = Color3.fromRGB(0, 220, 160)
-    title.TextSize = 20
-    title.Font = Enum.Font.GothamBold
-    title.Parent = login
+    Instance.new("UICorner", loginFrame).CornerRadius = UDim.new(0, 14)
+    local lStroke = Instance.new("UIStroke", loginFrame)
+    lStroke.Color = Color3.fromRGB(30, 35, 48)
+    lStroke.Thickness = 1
 
-    local userBox = Instance.new("TextBox")
-    userBox.Size = UDim2.new(0.85, 0, 0, 40)
-    userBox.Position = UDim2.new(0.075, 0, 0, 60)
-    userBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-    userBox.PlaceholderText = "Usuario"
-    userBox.Text = ""
-    userBox.TextColor3 = Color3.new(1,1,1)
-    userBox.TextSize = 14
-    userBox.Parent = login
-    Instance.new("UICorner", userBox).CornerRadius = UDim.new(0, 10)
+    local lTitle = Instance.new("TextLabel")
+    lTitle.Size = UDim2.new(1, 0, 0, 30)
+    lTitle.Position = UDim2.new(0, 0, 0, 22)
+    lTitle.BackgroundTransparency = 1
+    lTitle.Text = "Autenticación VIP"
+    lTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lTitle.TextSize = 18
+    lTitle.Font = Enum.Font.GothamBold
+    lTitle.Parent = loginFrame
 
-    local passBox = Instance.new("TextBox")
-    passBox.Size = UDim2.new(0.85, 0, 0, 40)
-    passBox.Position = UDim2.new(0.075, 0, 0, 115)
-    passBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-    passBox.PlaceholderText = "Contraseña"
-    passBox.Text = ""
-    passBox.TextColor3 = Color3.new(1,1,1)
-    passBox.TextSize = 14
-    passBox.Parent = login
-    Instance.new("UICorner", passBox).CornerRadius = UDim.new(0, 10)
+    local lSub = Instance.new("TextLabel")
+    lSub.Size = UDim2.new(1, 0, 0, 18)
+    lSub.Position = UDim2.new(0, 0, 0, 50)
+    lSub.BackgroundTransparency = 1
+    lSub.Text = "Ingresa tus credenciales de acceso"
+    lSub.TextColor3 = Color3.fromRGB(120, 125, 140)
+    lSub.TextSize = 11
+    lSub.Font = Enum.Font.Gotham
+    lSub.Parent = loginFrame
+
+    local function createInput(placeholder, y, isPass)
+        local box = Instance.new("TextBox")
+        box.Size = UDim2.new(0.84, 0, 0, 42)
+        box.Position = UDim2.new(0.08, 0, 0, y)
+        box.BackgroundColor3 = Color3.fromRGB(20, 23, 31)
+        box.PlaceholderText = placeholder
+        box.PlaceholderColor3 = Color3.fromRGB(90, 95, 110)
+        box.Text = ""
+        box.TextColor3 = Color3.fromRGB(240, 240, 245)
+        box.TextSize = 13
+        box.Font = Enum.Font.GothamSemibold
+        box.ClearTextOnFocus = false
+        box.Parent = loginFrame
+        
+        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 9)
+        local bStroke = Instance.new("UIStroke", box)
+        bStroke.Color = Color3.fromRGB(35, 40, 52)
+        bStroke.Thickness = 1
+
+        box.Focused:Connect(function()
+            TweenService:Create(bStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(0, 230, 160)}):Play()
+        end)
+        box.FocusLost:Connect(function()
+            TweenService:Create(bStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(35, 40, 52)}):Play()
+        end)
+
+        return box
+    end
+
+    local userBox = createInput("Usuario", 82, false)
+    local passBox = createInput("Contraseña", 136, true)
 
     local enterBtn = Instance.new("TextButton")
-    enterBtn.Size = UDim2.new(0.85, 0, 0, 42)
-    enterBtn.Position = UDim2.new(0.075, 0, 0, 180)
-    enterBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 130)
-    enterBtn.Text = "Entrar"
-    enterBtn.TextColor3 = Color3.new(1,1,1)
-    enterBtn.TextSize = 15
+    enterBtn.Size = UDim2.new(0.84, 0, 0, 42)
+    enterBtn.Position = UDim2.new(0.08, 0, 0, 202)
+    enterBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 140)
+    enterBtn.Text = "Iniciar Sesión"
+    enterBtn.TextColor3 = Color3.fromRGB(10, 12, 16)
+    enterBtn.TextSize = 13
     enterBtn.Font = Enum.Font.GothamBold
-    enterBtn.Parent = login
-    Instance.new("UICorner", enterBtn).CornerRadius = UDim.new(0, 10)
+    enterBtn.Parent = loginFrame
+    Instance.new("UICorner", enterBtn).CornerRadius = UDim.new(0, 9)
 
     enterBtn.MouseButton1Click:Connect(function()
         if userBox.Text == "sexyboy01" and passBox.Text == "messi10" then
-            login:Destroy()
+            if blur then blur:Destroy() end
+            loginFrame:Destroy()
             createHub()
         else
             userBox.Text = ""
             passBox.Text = ""
-            userBox.PlaceholderText = "Incorrecto"
+            lSub.Text = "Credenciales incorrectas"
+            lSub.TextColor3 = Color3.fromRGB(245, 80, 80)
         end
     end)
 end
 
--- ==================== UI HELPERS ====================
+-- ==================== UI BUILDERS ====================
 local mainFrame = nil
 
 local function createToggle(parent, name, desc, y, callback)
     local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, -16, 0, 58)
-    row.Position = UDim2.new(0, 8, 0, y)
-    row.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+    row.Size = UDim2.new(1, -20, 0, 54)
+    row.Position = UDim2.new(0, 10, 0, y)
+    row.BackgroundColor3 = Color3.fromRGB(20, 23, 31)
     row.Parent = parent
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.65, 0, 0, 28)
-    label.Position = UDim2.new(0, 12, 0, 4)
+    label.Size = UDim2.new(0.7, 0, 0, 22)
+    label.Position = UDim2.new(0, 12, 0, 8)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(235, 235, 240)
-    label.TextSize = 14
+    label.TextColor3 = Color3.fromRGB(235, 240, 245)
+    label.TextSize = 13
     label.Font = Enum.Font.GothamSemibold
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = row
 
     local descL = Instance.new("TextLabel")
-    descL.Size = UDim2.new(0.65, 0, 0, 20)
-    descL.Position = UDim2.new(0, 12, 0, 30)
+    descL.Size = UDim2.new(0.7, 0, 0, 16)
+    descL.Position = UDim2.new(0, 12, 0, 28)
     descL.BackgroundTransparency = 1
     descL.Text = desc
-    descL.TextColor3 = Color3.fromRGB(130, 130, 140)
-    descL.TextSize = 11
+    descL.TextColor3 = Color3.fromRGB(110, 115, 130)
+    descL.TextSize = 10
     descL.Font = Enum.Font.Gotham
     descL.TextXAlignment = Enum.TextXAlignment.Left
     descL.Parent = row
 
     local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 50, 0, 26)
-    toggle.Position = UDim2.new(1, -60, 0.5, -13)
-    toggle.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
+    toggle.Size = UDim2.new(0, 42, 0, 22)
+    toggle.Position = UDim2.new(1, -52, 0.5, -11)
+    toggle.BackgroundColor3 = Color3.fromRGB(35, 40, 52)
     toggle.Text = ""
     toggle.Parent = row
     Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
 
     local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 20, 0, 20)
-    circle.Position = UDim2.new(0, 3, 0.5, -10)
-    circle.BackgroundColor3 = Color3.new(1,1,1)
+    circle.Size = UDim2.new(0, 16, 0, 16)
+    circle.Position = UDim2.new(0, 3, 0.5, -8)
+    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     circle.Parent = toggle
     Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
 
     local state = false
     toggle.MouseButton1Click:Connect(function()
         state = not state
-        TweenService:Create(toggle, TweenInfo.new(0.15), {
-            BackgroundColor3 = state and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(55, 55, 60)
+        TweenService:Create(toggle, TweenInfo.new(0.18), {
+            BackgroundColor3 = state and Color3.fromRGB(0, 230, 160) or Color3.fromRGB(35, 40, 52)
         }):Play()
-        TweenService:Create(circle, TweenInfo.new(0.15), {
-            Position = state and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+        TweenService:Create(circle, TweenInfo.new(0.18), {
+            Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
         }):Play()
         callback(state)
     end)
     return row
 end
 
-local function createButton(parent, name, desc, y, color, callback)
+local function createButton(parent, name, desc, y, accentColor, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -16, 0, 52)
-    btn.Position = UDim2.new(0, 8, 0, y)
-    btn.BackgroundColor3 = color
+    btn.Size = UDim2.new(1, -20, 0, 50)
+    btn.Position = UDim2.new(0, 10, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 23, 31)
     btn.Text = ""
     btn.Parent = parent
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0, 3, 0, 26)
+    indicator.Position = UDim2.new(0, 0, 0.5, -13)
+    indicator.BackgroundColor3 = accentColor or Color3.fromRGB(0, 230, 160)
+    indicator.Parent = btn
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -10, 0, 26)
-    label.Position = UDim2.new(0, 10, 0, 4)
+    label.Size = UDim2.new(1, -20, 0, 22)
+    label.Position = UDim2.new(0, 14, 0, 6)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.new(1,1,1)
-    label.TextSize = 14
+    label.TextColor3 = Color3.fromRGB(235, 240, 245)
+    label.TextSize = 13
     label.Font = Enum.Font.GothamSemibold
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = btn
 
     local descL = Instance.new("TextLabel")
-    descL.Size = UDim2.new(1, -10, 0, 18)
-    descL.Position = UDim2.new(0, 10, 0, 28)
+    descL.Size = UDim2.new(1, -20, 0, 16)
+    descL.Position = UDim2.new(0, 14, 0, 26)
     descL.BackgroundTransparency = 1
     descL.Text = desc
-    descL.TextColor3 = Color3.fromRGB(200, 200, 210)
-    descL.TextSize = 11
+    descL.TextColor3 = Color3.fromRGB(110, 115, 130)
+    descL.TextSize = 10
     descL.Font = Enum.Font.Gotham
     descL.TextXAlignment = Enum.TextXAlignment.Left
     descL.Parent = btn
@@ -318,43 +389,61 @@ function createHub()
     if mainFrame then mainFrame:Destroy() end
 
     local main = Instance.new("Frame")
-    main.Size = UDim2.new(0, 350, 0, 520)
-    main.Position = UDim2.new(0.5, -175, 0.5, -260)
-    main.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+    main.Size = UDim2.new(0, 480, 0, 360)
+    main.Position = UDim2.new(0.5, -240, 0.5, -180)
+    main.BackgroundColor3 = Color3.fromRGB(13, 15, 20)
     main.Active = true
     main.Draggable = true
     main.Parent = screenGui
-    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+    
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+    local mStroke = Instance.new("UIStroke", main)
+    mStroke.Color = Color3.fromRGB(30, 35, 48)
+    mStroke.Thickness = 1
     mainFrame = main
 
     floatBtn.Visible = false
 
-    local top = Instance.new("Frame")
-    top.Size = UDim2.new(1, 0, 0, 48)
-    top.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-    top.Parent = main
-    Instance.new("UICorner", top).CornerRadius = UDim.new(0, 16)
+    -- Sidebar Left
+    local sidebar = Instance.new("Frame")
+    sidebar.Size = UDim2.new(0, 130, 1, 0)
+    sidebar.BackgroundColor3 = Color3.fromRGB(17, 19, 26)
+    sidebar.Parent = main
+    Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 12)
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -50, 1, 0)
-    title.Position = UDim2.new(0, 14, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Text = t("title")
-    title.TextColor3 = Color3.fromRGB(0, 220, 160)
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = top
+    local brand = Instance.new("TextLabel")
+    brand.Size = UDim2.new(1, -16, 0, 22)
+    brand.Position = UDim2.new(0, 12, 0, 16)
+    brand.BackgroundTransparency = 1
+    brand.Text = t("title")
+    brand.TextColor3 = Color3.fromRGB(255, 255, 255)
+    brand.TextSize = 15
+    brand.Font = Enum.Font.GothamBold
+    brand.TextXAlignment = Enum.TextXAlignment.Left
+    brand.Parent = sidebar
 
+    brandSub = Instance.new("TextLabel")
+    brandSub.Size = UDim2.new(1, -16, 0, 14)
+    brandSub.Position = UDim2.new(0, 12, 0, 36)
+    brandSub.BackgroundTransparency = 1
+    brandSub.Text = t("subtitle")
+    brandSub.TextColor3 = Color3.fromRGB(0, 230, 160)
+    brandSub.TextSize = 9
+    brandSub.Font = Enum.Font.GothamBold
+    brandSub.TextXAlignment = Enum.TextXAlignment.Left
+    brandSub.Parent = sidebar
+
+    -- Header Top Right
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 30, 0, 30)
-    closeBtn.Position = UDim2.new(1, -38, 0.5, -15)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    closeBtn.Size = UDim2.new(0, 26, 0, 26)
+    closeBtn.Position = UDim2.new(1, -34, 0, 12)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(22, 25, 34)
     closeBtn.Text = "✕"
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.TextSize = 14
-    closeBtn.Parent = top
-    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+    closeBtn.TextColor3 = Color3.fromRGB(140, 145, 160)
+    closeBtn.TextSize = 12
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Parent = main
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
     closeBtn.MouseButton1Click:Connect(function()
         main.Visible = false
@@ -366,36 +455,39 @@ function createHub()
         floatBtn.Visible = false
     end)
 
-    -- Tabs
-    local tabBar = Instance.new("Frame")
-    tabBar.Size = UDim2.new(1, -12, 0, 32)
-    tabBar.Position = UDim2.new(0, 6, 0, 54)
-    tabBar.BackgroundTransparency = 1
-    tabBar.Parent = main
-
+    -- Navigation Tabs
     local pages, tabBtns = {}, {}
     local tabNames = {"combat", "movement", "teleports", "settings"}
     local tabLabels = {t("combat"), t("movement"), t("teleports"), t("settings")}
 
+    local tabHolder = Instance.new("Frame")
+    tabHolder.Size = UDim2.new(1, -16, 1, -70)
+    tabHolder.Position = UDim2.new(0, 8, 0, 60)
+    tabHolder.BackgroundTransparency = 1
+    tabHolder.Parent = sidebar
+
     for i, key in ipairs(tabNames) do
         local tab = Instance.new("TextButton")
-        tab.Size = UDim2.new(0.23, 0, 1, 0)
-        tab.Position = UDim2.new((i-1) * 0.25, 0, 0, 0)
-        tab.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-        tab.Text = tabLabels[i]
-        tab.TextColor3 = Color3.fromRGB(150, 150, 160)
+        tab.Size = UDim2.new(1, 0, 0, 34)
+        tab.Position = UDim2.new(0, 0, 0, (i-1) * 38)
+        tab.BackgroundColor3 = (i == 1) and Color3.fromRGB(24, 28, 38) or Color3.fromRGB(0, 0, 0)
+        tab.BackgroundTransparency = (i == 1) and 0 or 1
+        tab.Text = "  " .. tabLabels[i]
+        tab.TextColor3 = (i == 1) and Color3.fromRGB(0, 230, 160) or Color3.fromRGB(120, 125, 140)
         tab.TextSize = 11
         tab.Font = Enum.Font.GothamSemibold
-        tab.Parent = tabBar
-        Instance.new("UICorner", tab).CornerRadius = UDim.new(0, 8)
+        tab.TextXAlignment = Enum.TextXAlignment.Left
+        tab.Parent = tabHolder
+        Instance.new("UICorner", tab).CornerRadius = UDim.new(0, 6)
 
         local page = Instance.new("ScrollingFrame")
-        page.Size = UDim2.new(1, 0, 1, -95)
-        page.Position = UDim2.new(0, 0, 0, 95)
+        page.Size = UDim2.new(1, -145, 1, -50)
+        page.Position = UDim2.new(0, 138, 0, 44)
         page.BackgroundTransparency = 1
-        page.ScrollBarThickness = 3
-        page.CanvasSize = UDim2.new(0, 0, 0, 450)
-        page.Visible = false
+        page.ScrollBarThickness = 2
+        page.ScrollBarImageColor3 = Color3.fromRGB(40, 45, 60)
+        page.CanvasSize = UDim2.new(0, 0, 0, 380)
+        page.Visible = (i == 1)
         page.Parent = main
 
         pages[key] = page
@@ -403,16 +495,14 @@ function createHub()
 
         tab.MouseButton1Click:Connect(function()
             for k, p in pairs(pages) do
-                p.Visible = (k == key)
-                tabBtns[k].BackgroundColor3 = (k == key) and Color3.fromRGB(0, 160, 120) or Color3.fromRGB(28, 28, 34)
-                tabBtns[k].TextColor3 = (k == key) and Color3.new(1,1,1) or Color3.fromRGB(150, 150, 160)
+                local isTarget = (k == key)
+                p.Visible = isTarget
+                tabBtns[k].BackgroundTransparency = isTarget and 0 or 1
+                tabBtns[k].BackgroundColor3 = isTarget and Color3.fromRGB(24, 28, 38) or Color3.fromRGB(0, 0, 0)
+                tabBtns[k].TextColor3 = isTarget and Color3.fromRGB(0, 230, 160) or Color3.fromRGB(120, 125, 140)
             end
         end)
     end
-
-    pages["combat"].Visible = true
-    tabBtns["combat"].BackgroundColor3 = Color3.fromRGB(0, 160, 120)
-    tabBtns["combat"].TextColor3 = Color3.new(1,1,1)
 
     -- ===== COMBAT =====
     local killAura = false
@@ -441,7 +531,7 @@ function createHub()
     end)
 
     local rpg = false
-    createToggle(pages["combat"], t("rpg"), t("rpgDesc"), 70, function(on)
+    createToggle(pages["combat"], t("rpg"), t("rpgDesc"), 65, function(on)
         rpg = on
         if on then
             task.spawn(function()
@@ -464,7 +554,7 @@ function createHub()
     end)
 
     local turret = false
-    createToggle(pages["combat"], t("turret"), t("turretDesc"), 135, function(on)
+    createToggle(pages["combat"], t("turret"), t("turretDesc"), 125, function(on)
         turret = on
         if on then
             task.spawn(function()
@@ -501,7 +591,7 @@ function createHub()
         end
     end)
 
-    createButton(pages["combat"], t("refresh"), t("refreshDesc"), 205, Color3.fromRGB(0, 140, 190), function()
+    createButton(pages["combat"], t("refresh"), t("refreshDesc"), 185, Color3.fromRGB(0, 180, 220), function()
         task.spawn(function()
             local char = player.Character
             if not char then return end
@@ -526,7 +616,7 @@ function createHub()
         end)
     end)
 
-    createButton(pages["combat"], t("refreshCS"), t("refreshCSDesc"), 265, Color3.fromRGB(0, 170, 130), function()
+    createButton(pages["combat"], t("refreshCS"), t("refreshCSDesc"), 242, Color3.fromRGB(0, 230, 160), function()
         task.spawn(function()
             local char = player.Character or player.CharacterAdded:Wait()
             local hrp = char:WaitForChild("HumanoidRootPart")
@@ -557,7 +647,7 @@ function createHub()
     end)
 
     local infJump = false
-    createToggle(pages["movement"], t("jump"), t("jumpDesc"), 70, function(on)
+    createToggle(pages["movement"], t("jump"), t("jumpDesc"), 65, function(on)
         infJump = on
     end)
     UserInputService.JumpRequest:Connect(function()
@@ -567,7 +657,7 @@ function createHub()
     end)
 
     local flyOn, flyBV = false, nil
-    createToggle(pages["movement"], t("fly"), t("flyDesc"), 135, function(on)
+    createToggle(pages["movement"], t("fly"), t("flyDesc"), 125, function(on)
         flyOn = on
         if on then
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -595,37 +685,36 @@ function createHub()
     end)
 
     -- ===== TELEPORTS =====
-    createButton(pages["teleports"], t("harbour"), t("tpDesc"), 5, Color3.fromRGB(0, 140, 100), function()
+    createButton(pages["teleports"], t("harbour"), t("tpDesc"), 5, Color3.fromRGB(0, 230, 160), function()
         Event:FireServer("Teleport", {"Harbour", ""})
     end)
-    createButton(pages["teleports"], t("islandA"), t("tpDesc"), 65, Color3.fromRGB(0, 110, 180), function()
+    createButton(pages["teleports"], t("islandA"), t("tpDesc"), 60, Color3.fromRGB(0, 150, 255), function()
         Event:FireServer("Teleport", {"Island", "A", 0})
     end)
-    createButton(pages["teleports"], t("islandB"), t("tpDesc"), 125, Color3.fromRGB(0, 110, 180), function()
+    createButton(pages["teleports"], t("islandB"), t("tpDesc"), 115, Color3.fromRGB(0, 150, 255), function()
         Event:FireServer("Teleport", {"Island", "B", 0})
     end)
-    createButton(pages["teleports"], t("islandC"), t("tpDesc"), 185, Color3.fromRGB(0, 110, 180), function()
+    createButton(pages["teleports"], t("islandC"), t("tpDesc"), 170, Color3.fromRGB(0, 150, 255), function()
         Event:FireServer("Teleport", {"Island", "C", 0})
     end)
-    createButton(pages["teleports"], t("carrier"), t("tpDesc"), 245, Color3.fromRGB(180, 100, 40), function()
+    createButton(pages["teleports"], t("carrier"), t("tpDesc"), 225, Color3.fromRGB(240, 140, 40), function()
         Event:FireServer("Teleport", {"Carrier", "", 0})
     end)
-    createButton(pages["teleports"], t("battleship"), t("tpDesc"), 305, Color3.fromRGB(100, 80, 180), function()
+    createButton(pages["teleports"], t("battleship"), t("tpDesc"), 280, Color3.fromRGB(160, 90, 240), function()
         Event:FireServer("Teleport", {"Battleship", "", 0})
     end)
 
     -- ===== SETTINGS =====
-    createButton(pages["settings"], "Español", "Cambiar a español", 5, Color3.fromRGB(50, 120, 200), function()
+    createButton(pages["settings"], "Español", "Cambiar idioma a Español", 5, Color3.fromRGB(0, 150, 255), function()
         lang = "ES"
         main:Destroy()
         createHub()
     end)
-    createButton(pages["settings"], "English", "Switch to English", 65, Color3.fromRGB(50, 120, 200), function()
+    createButton(pages["settings"], "English", "Switch language to English", 60, Color3.fromRGB(0, 150, 255), function()
         lang = "EN"
         main:Destroy()
         createHub()
     end)
 end
 
-print("¡Gracias por usar mi Hub! Disfruta del script... cualquier sugerencia a mi Discord: srmoises. / moises.01")
-print("Thanks for using my Hub! Enjoy the script... send any suggestions to my Discord: srmoises. / moises.01")
+print("SexyBoy Hub v5 activado con éxito.")
