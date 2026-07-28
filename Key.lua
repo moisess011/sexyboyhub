@@ -405,27 +405,6 @@ local function CreateGUI()
             Status.Text = "Error: " .. tostring(link)
         end
     end)
-
-    -- Auto Check Saved Key
-    if isfile and isfile(Config.KeyFileName) then
-        local savedKey = readfile(Config.KeyFileName)
-        if savedKey ~= "" then
-            Status.Text = "Found saved key, verifying..."
-            task.spawn(function()
-                local success, msg = redeemKey(savedKey)
-                if success then
-                    Status.Text = "Auto-login success!"
-                    Status.TextColor3 = Color3.fromRGB(0, 255, 100)
-                    task.wait(0.5)
-                    ScreenGui:Destroy()
-                    StartMainScript()
-                else
-                    Status.Text = "Saved key expired or invalid."
-                    Status.TextColor3 = Color3.fromRGB(255, 150, 0)
-                end
-            end)
-        end
-    end
 end
 
 -- Check if main script GUI is already open
@@ -437,5 +416,17 @@ if pGui:FindFirstChild(Config.MainGuiName) then
     return
 end
 
--- Initialize Key System GUI
+-- Fast Auto Check Saved Key BEFORE opening the GUI
+if isfile and isfile(Config.KeyFileName) then
+    local savedKey = readfile(Config.KeyFileName)
+    if savedKey ~= "" then
+        local success = redeemKey(savedKey)
+        if success then
+            StartMainScript()
+            return
+        end
+    end
+end
+
+-- Initialize Key System GUI if no valid key was found
 CreateGUI()
