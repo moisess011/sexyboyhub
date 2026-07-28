@@ -1,5 +1,5 @@
--- // SexyBoy Hub v5 - Modern UI Edition
--- // Interfaz Rediseñada & Sistema UI Avanzado
+-- // SexyBoy Hub v5.1 - Universal Cross-Platform Edition
+-- // Interfaz Rediseñada & Sistema UI Avanzado + Vuelo para Móvil
 
 local player = game.Players.LocalPlayer
 local Event = game:GetService("ReplicatedStorage"):WaitForChild("Event")
@@ -23,7 +23,7 @@ local lang = "ES"
 local T = {
     ES = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.0",
+        subtitle = "HUB VIP v5.1",
         combat = "Combate",
         movement = "Movimiento",
         teleports = "Teleports",
@@ -42,8 +42,8 @@ local T = {
         speedDesc = "Multiplica la velocidad de desplazamiento",
         jump = "Salto Infinito",
         jumpDesc = "Permite saltar de forma continua en el aire",
-        fly = "Modo Vuelo",
-        flyDesc = "Desplazamiento libre tridimensional",
+        fly = "Modo Vuelo (PC / Móvil)",
+        flyDesc = "Vuelo libre usando el joystick o teclado",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -56,7 +56,7 @@ local T = {
     },
     EN = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.0",
+        subtitle = "HUB VIP v5.1",
         combat = "Combat",
         movement = "Movement",
         teleports = "Teleports",
@@ -75,8 +75,8 @@ local T = {
         speedDesc = "Increases movement velocity",
         jump = "Infinite Jump",
         jumpDesc = "Allows continuous mid-air jumps",
-        fly = "Fly Mode",
-        flyDesc = "Free 3D camera flight",
+        fly = "Fly Mode (PC / Mobile)",
+        flyDesc = "Free flight using joystick or keyboard",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -422,7 +422,7 @@ function createHub()
     brand.TextXAlignment = Enum.TextXAlignment.Left
     brand.Parent = sidebar
 
-    brandSub = Instance.new("TextLabel")
+    local brandSub = Instance.new("TextLabel")
     brandSub.Size = UDim2.new(1, -16, 0, 14)
     brandSub.Position = UDim2.new(0, 12, 0, 36)
     brandSub.BackgroundTransparency = 1
@@ -656,31 +656,49 @@ function createHub()
         end
     end)
 
-    local flyOn, flyBV = false, nil
+    -- // SISTEMA DE VUELO MÓVIL / PC UNIVERSAL //
+    local flyOn, flyBV, flyGyro = false, nil, nil
     createToggle(pages["movement"], t("fly"), t("flyDesc"), 125, function(on)
         flyOn = on
-        if on then
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                flyBV = Instance.new("BodyVelocity")
-                flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                flyBV.Velocity = Vector3.zero
-                flyBV.Parent = hrp
-                task.spawn(function()
-                    while flyOn and flyBV and flyBV.Parent do
-                        local cam = workspace.CurrentCamera
-                        local dir = Vector3.zero
-                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
-                        flyBV.Velocity = dir.Magnitude > 0.1 and dir.Unit * 80 or Vector3.zero
-                        task.wait()
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+
+        if on and hrp and hum then
+            hum.PlatformStand = true
+
+            flyBV = Instance.new("BodyVelocity")
+            flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyBV.Velocity = Vector3.zero
+            flyBV.Parent = hrp
+
+            flyGyro = Instance.new("BodyGyro")
+            flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            flyGyro.CFrame = hrp.CFrame
+            flyGyro.P = 9e4
+            flyGyro.Parent = hrp
+
+            task.spawn(function()
+                while flyOn and flyBV and flyBV.Parent and hrp do
+                    local cam = workspace.CurrentCamera
+                    local moveDir = hum.MoveDirection -- Detecta Joystick Táctil y W/A/S/D
+                    local targetVel = Vector3.zero
+
+                    if moveDir.Magnitude > 0.1 then
+                        -- Convertir la dirección del joystick/teclado para seguir la perspectiva de la cámara en 3D
+                        local lookCF = cam.CFrame
+                        targetVel = (lookCF.LookVector * -moveDir.Z + lookCF.RightVector * moveDir.X).Unit * 75
                     end
-                end)
-            end
+
+                    flyBV.Velocity = targetVel
+                    flyGyro.CFrame = cam.CFrame
+                    task.wait()
+                end
+            end)
         else
+            if hum then hum.PlatformStand = false end
             if flyBV then flyBV:Destroy() flyBV = nil end
+            if flyGyro then flyGyro:Destroy() flyGyro = nil end
         end
     end)
 
@@ -717,4 +735,4 @@ function createHub()
     end)
 end
 
-print("SexyBoy Hub v5 activado con éxito.")
+print("SexyBoy Hub v5.1 activado con éxito.")
