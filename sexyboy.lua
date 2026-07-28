@@ -1,4 +1,4 @@
--- // SexyBoy Hub v5.2 - Custom Speed & Fixed Mobile Fly
+-- // SexyBoy Hub v5.2 - Custom Speed & Fixed Mobile Fly + IY FLY VIP
 -- // Interfaz Rediseñada & Controles Interactivos
 
 local player = game.Players.LocalPlayer
@@ -46,6 +46,8 @@ local T = {
         flyDesc = "Vuelo libre ajustado para cualquier dispositivo",
         flySpeed = "Velocidad de Vuelo",
         flySpeedDesc = "Ajusta la velocidad mientras estás volando",
+        iyFly = "IY Fly (VIP)",
+        iyFlyDesc = "Ejecuta el fly clásico estilo Infinite Yield",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -81,6 +83,8 @@ local T = {
         flyDesc = "Free flight tuned for any device",
         flySpeed = "Fly Speed",
         flySpeedDesc = "Adjust speed while flying",
+        iyFly = "IY Fly (VIP)",
+        iyFlyDesc = "Triggers Infinite Yield classic fly code",
         harbour = "Harbour Base",
         islandA = "Island A",
         islandB = "Island B",
@@ -565,7 +569,7 @@ function createHub()
         page.BackgroundTransparency = 1
         page.ScrollBarThickness = 2
         page.ScrollBarImageColor3 = Color3.fromRGB(40, 45, 60)
-        page.CanvasSize = UDim2.new(0, 0, 0, 420)
+        page.CanvasSize = UDim2.new(0, 0, 0, 480)
         page.Visible = (i == 1)
         page.Parent = main
 
@@ -777,7 +781,6 @@ function createHub()
 
                     if moveDir.Magnitude > 0.1 then
                         local lookCF = cam.CFrame
-                        -- CORRECCIÓN DEL VECTOR: Se invierten los valores Z para corregir dirección en móvil
                         targetVel = (lookCF.LookVector * moveDir.Z + lookCF.RightVector * moveDir.X).Unit * flySpeedVal
                     end
 
@@ -795,6 +798,72 @@ function createHub()
 
     createSlider(pages["movement"], t("flySpeed"), t("flySpeedDesc"), 253, 20, 250, 80, function(v)
         flySpeedVal = v
+    end)
+
+    -- // NUTRIDO: INFINITE YIELD FLY (VIP) //
+    createButton(pages["movement"], t("iyFly"), t("iyFlyDesc"), 321, Color3.fromRGB(255, 170, 0), function()
+        task.spawn(function()
+            local iyFlyScript = [[
+                local Speaker = game:GetService("Players").LocalPlayer
+                local Speed = 1
+                local IYMouse = Speaker:GetMouse()
+                local CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                local lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                local FLYING = false
+                local BG, BV
+
+                local function getRoot(char)
+                    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+                end
+
+                local function startFly()
+                    local char = Speaker.Character
+                    if not char then return end
+                    local root = getRoot(char)
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if not root or not hum then return end
+
+                    FLYING = true
+                    BG = Instance.new('BodyGyro')
+                    BV = Instance.new('BodyVelocity')
+                    BG.P = 9e4
+                    BG.Parent = root
+                    BV.Parent = root
+                    BG.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                    BG.cframe = root.CFrame
+                    BV.velocity = Vector3.new(0,0,0)
+                    BV.maxForce = Vector3.new(9e9, 9e9, 9e9)
+
+                    task.spawn(function()
+                        repeat task.wait()
+                            if hum then hum.PlatformStand = true end
+                            if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
+                                Speed = 50
+                            else
+                                Speed = 0
+                            end
+                            BV.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (CONTROL.F + CONTROL.B)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.F + CONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0)).p - workspace.CurrentCamera.CoordinateFrame.p)) * Speed
+                            BG.cframe = workspace.CurrentCamera.CoordinateFrame
+                        until not FLYING
+                        CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                        lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                        Speed = 0
+                        if BG then BG:Destroy() end
+                        if BV then BV:Destroy() end
+                        if hum then hum.PlatformStand = false end
+                    end)
+                end
+
+                startFly()
+            ]]
+            
+            local func, err = loadstring(iyFlyScript)
+            if func then
+                func()
+            else
+                warn("Error al ejecutar IY Fly: " .. tostring(err))
+            end
+        end)
     end)
 
     -- ===== TELEPORTS =====
@@ -820,14 +889,5 @@ function createHub()
     -- ===== SETTINGS =====
     createButton(pages["settings"], "Español", "Cambiar idioma a Español", 5, Color3.fromRGB(0, 150, 255), function()
         lang = "ES"
-        main:Destroy()
-        createHub()
-    end)
-    createButton(pages["settings"], "English", "Switch language to English", 60, Color3.fromRGB(0, 150, 255), function()
-        lang = "EN"
-        main:Destroy()
-        createHub()
     end)
 end
-
-print("SexyBoy Hub v5.2 activado con éxito.")
