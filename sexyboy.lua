@@ -1,4 +1,4 @@
--- // SexyBoy Hub v5.3 - Smooth Mobile Fly & Complete Clean Code
+-- // SexyBoy Hub v5.4 - CFrame Mobile Fly (100% Fix)
 -- // Interfaz Rediseñada & Controles Interactivos optimizados para Móviles
 
 local player = game.Players.LocalPlayer
@@ -24,7 +24,7 @@ local lang = "ES"
 local T = {
     ES = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.3",
+        subtitle = "HUB VIP v5.4",
         combat = "Combate",
         movement = "Movimiento",
         teleports = "Teleports",
@@ -42,9 +42,9 @@ local T = {
         speed = "Velocidad Personalizada",
         speedDesc = "Ajusta tu velocidad de caminata",
         jump = "Salto Infinito",
-        jumpDesc = "Permite saltar de forma continuous en el aire",
-        fly = "Vuelo Mobile Ultra-Smooth",
-        flyDesc = "Vuelo fluido que responde al giro exacto de tu cámara",
+        jumpDesc = "Permite saltar de forma continua en el aire",
+        fly = "Vuelo CFrame Mobile",
+        flyDesc = "Vuelo 100% fluido guiado por la mira y el joystick",
         flySpeed = "Velocidad de Vuelo",
         flySpeedDesc = "Ajusta la velocidad mientras estás volando",
         harbour = "Harbour Base",
@@ -59,7 +59,7 @@ local T = {
     },
     EN = {
         title = "SEXYBOY",
-        subtitle = "HUB VIP v5.3",
+        subtitle = "HUB VIP v5.4",
         combat = "Combat",
         movement = "Movement",
         teleports = "Teleports",
@@ -78,8 +78,8 @@ local T = {
         speedDesc = "Adjust your walk speed",
         jump = "Infinite Jump",
         jumpDesc = "Allows continuous mid-air jumps",
-        fly = "Ultra-Smooth Mobile Fly",
-        flyDesc = "Smooth flight following camera angles",
+        fly = "CFrame Mobile Fly",
+        flyDesc = "100% smooth flight guided by camera and joystick",
         flySpeed = "Fly Speed",
         flySpeedDesc = "Adjust speed while flying",
         harbour = "Harbour Base",
@@ -748,10 +748,9 @@ function createHub()
         end
     end)
 
-    -- // SISTEMA DE VUELO ULTRASMOOTH MOBILE (ORIENTADO A CÁMARA) //
+    -- // VUELO CFRAME REESCRITO (100% LIBRE DE BUGS MÓVILES) //
     local flyOn = false
     local flyConnection = nil
-    local flyBV, flyGyro = nil, nil
 
     createToggle(pages["movement"], t("fly"), t("flyDesc"), 193, function(on)
         flyOn = on
@@ -760,36 +759,31 @@ function createHub()
         local hum = char and char:FindFirstChild("Humanoid")
 
         if on and hrp and hum then
-            hum.PlatformStand = true
+            hum:ChangeState(Enum.HumanoidStateType.Swimming)
 
-            flyBV = Instance.new("BodyVelocity")
-            flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            flyBV.Velocity = Vector3.zero
-            flyBV.Parent = hrp
-
-            flyGyro = Instance.new("BodyGyro")
-            flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            flyGyro.P = 15000
-            flyGyro.CFrame = hrp.CFrame
-            flyGyro.Parent = hrp
-
-            -- Bucle suave sincronizado con RenderStepped
-            flyConnection = RunService.RenderStepped:Connect(function()
-                if not flyOn or not hrp or not hum then return end
+            flyConnection = RunService.RenderStepped:Connect(function(deltaTime)
+                if not flyOn or not hrp or not hum or not char:IsDescendantOf(workspace) then
+                    if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+                    return
+                end
 
                 local cam = workspace.CurrentCamera
-                local moveDir = hum.MoveDirection -- Capta el joystick táctil nativo
+                local moveDir = hum.MoveDirection -- Palanca táctil nativa del celular
+
+                -- Anula la gravedad del servidor para que no caiga
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
 
                 if moveDir.Magnitude > 0.1 then
-                    -- Proyección 3D pura basada en hacia dónde apunta la cámara (LookVector)
-                    local cameraCFrame = cam.CFrame
-                    local flyVector = (cameraCFrame.LookVector * -moveDir.Z) + (cameraCFrame.RightVector * moveDir.X)
+                    local camCF = cam.CFrame
+                    local lookVec = camCF.LookVector
+                    local rightVec = camCF.RightVector
+
+                    -- Calcula la dirección vectorial libre en 3D
+                    local direction = (lookVec * -moveDir.Z + rightVec * moveDir.X).Unit
                     
-                    flyBV.Velocity = flyVector.Unit * flySpeedVal
-                    flyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cameraCFrame.LookVector)
-                else
-                    flyBV.Velocity = Vector3.zero
-                    flyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.CFrame.LookVector)
+                    -- Desplaza la posición vía CFrame
+                    hrp.CFrame = hrp.CFrame + (direction * (flySpeedVal * deltaTime))
                 end
             end)
         else
@@ -797,9 +791,9 @@ function createHub()
                 flyConnection:Disconnect()
                 flyConnection = nil
             end
-            if hum then hum.PlatformStand = false end
-            if flyBV then flyBV:Destroy() flyBV = nil end
-            if flyGyro then flyGyro:Destroy() flyGyro = nil end
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
         end
     end)
 
